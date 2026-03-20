@@ -45,7 +45,7 @@ SUMMARY_MIN_LENGTH = int(os.getenv("SUMMARY_MIN_LENGTH", "300"))
 SUMMARY_MAX_LENGTH = int(os.getenv("SUMMARY_MAX_LENGTH", "800"))
 
 # 推送配置
-PUSH_METHOD = os.getenv("PUSH_METHOD", "github_issue")  # github_issue / telegram / feishu / none
+PUSH_METHOD = os.getenv("PUSH_METHOD", "feishu")  # github_issue / telegram / feishu / none
 
 # Telegram 推送
 TELEGRAM_BOT_TOKEN: Optional[str] = os.getenv("TELEGRAM_BOT_TOKEN")
