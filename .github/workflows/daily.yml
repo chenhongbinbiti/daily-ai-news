@@ -26,10 +26,11 @@ jobs:
       - name: Generate daily AI news
         run: python main.py
         env:
-          # 在这里配置你的API密钥和推送目标
-          # OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          # TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          # TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          FEISHU_WEBHOOK_URL: ${{ secrets.FEISHU_WEBHOOK_URL }}
+          PUSH_METHOD: ${{ vars.PUSH_METHOD }}
 
       - name: Commit updated news (可选，如果要保存历史到仓库)
         if: always()

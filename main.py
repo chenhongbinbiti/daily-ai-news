@@ -31,19 +31,31 @@ class DailyAINews:
     
     def get_ai_summary(self, news_text: str) -> str:
         """使用AI生成总结
-        在ArkClaw环境中使用内置免费模型，不需要付费API
+        纯GitHub Actions版本，需要配置OPENAI_API_KEY
         """
         prompt = self._build_prompt(news_text)
         
-        # 如果在ArkClaw环境运行，可以直接调用内置模型
+        if not config.OPENAI_API_KEY:
+            print("⚠️ 未配置OPENAI_API_KEY，返回原始格式")
+            return prompt
+        
+        # 调用OpenAI API
         try:
-            import openclaw
-            # ArkClaw内置模型调用
-            summary = openclaw.llm_completion(prompt)
+            import openai
+            client = openai.OpenAI(api_key=config.OPENAI_API_KEY)
+            response = client.chat.completions.create(
+                model=config.OPENAI_MODEL,
+                messages=[
+                    {"role": "system", "content": "你是一个新闻编辑助手，请整理AI新闻成清晰简洁的每日早报。"},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=config.SUMMARY_MAX_LENGTH * 2,
+                temperature=0.7
+            )
+            summary = response.choices[0].message.content.strip()
             return summary
-        except:
-            # 不在ArkClaw环境（GitHub Actions）或未配置，返回提示
-            print("⚠️ 无法调用内置AI模型，返回原始格式")
+        except Exception as e:
+            print(f"❌ OpenAI API调用失败: {e}")
             return prompt
     
     def _build_prompt(self, news_text: str) -> str:
