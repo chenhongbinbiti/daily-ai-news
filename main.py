@@ -127,10 +127,11 @@ class DailyAINews:
     def push_to_feishu(self, text: str) -> bool:
         """推送到飞书"""
         if not config.FEISHU_WEBHOOK_URL:
-            print("⚠️ 未配置飞书webhook")
+            print("⚠️ 未配置飞书webhook，请检查GitHub Secrets中的FEISHU_WEBHOOK_URL")
             return False
         
         import requests
+        print(f"🚀 正在推送到飞书... webhook地址: {config.FEISHU_WEBHOOK_URL[:30]}...")
         data = {
             "msg_type": "text",
             "content": {
@@ -138,6 +139,10 @@ class DailyAINews:
             }
         }
         response = requests.post(config.FEISHU_WEBHOOK_URL, json=data)
+        if response.ok:
+            print("✅ 飞书推送成功！")
+        else:
+            print(f"❌ 飞书推送失败！状态码: {response.status_code}, 响应: {response.text}")
         return response.ok
     
     def run(self) -> str:
@@ -168,6 +173,7 @@ class DailyAINews:
             self.save_to_file(final_output)
         
         # 6. 推送
+        print(f"📢 当前推送方式: {config.PUSH_METHOD}")
         if config.PUSH_METHOD == 'telegram':
             self.push_to_telegram(final_output)
         elif config.PUSH_METHOD == 'feishu':
@@ -175,6 +181,8 @@ class DailyAINews:
         elif config.PUSH_METHOD == 'github_issue':
             # GitHub Issue 推送需要额外配置
             print("GitHub Issue 推送需要额外配置GitHub Token")
+        else:
+            print(f"⚠️ 未知的推送方式: {config.PUSH_METHOD}，未执行推送")
         
         print("\n=== 生成完成 ===")
         print(final_output)
