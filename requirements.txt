@@ -1,0 +1,5 @@
+# 每日AI早报依赖
+
+requests>=2.31.0
+feedparser>=6.0.10
+python-dateutil>=2.8.2

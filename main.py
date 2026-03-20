@@ -1,0 +1,169 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+每日AI早报生成工具 - GitHub Actions 版本
+每天早上8点生成AI领域新闻并推送到社交媒体
+"""
+
+import os
+import sys
+import json
+from datetime import datetime
+from typing import Optional, List, Dict
+
+import config
+from rss_reader import RSSNewsReader
+
+class DailyAINews:
+    def __init__(self):
+        self.rss_reader = RSSNewsReader()
+    
+    def fetch_daily_news(self) -> List[Dict]:
+        """获取今日AI新闻"""
+        print("🔍 从RSS源获取今日AI新闻...")
+        news = self.rss_reader.fetch_all()
+        print(f"📝 找到 {len(news)} 条最近24小时内的新闻")
+        return news
+    
+    def format_for_ai(self, news: List[Dict]) -> str:
+        """格式化供AI总结"""
+        return self.rss_reader.format_for_summary(news)
+    
+    def get_ai_summary(self, news_text: str) -> str:
+        """使用AI生成总结
+        在ArkClaw环境中使用内置免费模型，不需要付费API
+        """
+        prompt = self._build_prompt(news_text)
+        
+        # 如果在ArkClaw环境运行，可以直接调用内置模型
+        try:
+            import openclaw
+            # ArkClaw内置模型调用
+            summary = openclaw.llm_completion(prompt)
+            return summary
+        except:
+            # 不在ArkClaw环境（GitHub Actions）或未配置，返回提示
+            print("⚠️ 无法调用内置AI模型，返回原始格式")
+            return prompt
+    
+    def _build_prompt(self, news_text: str) -> str:
+        return f"""
+请将以下今日AI领域新闻整理成一份清晰的每日早报。
+
+要求：
+1. 按重要性排序，最重要的放前面
+2. 每条新闻保留核心信息：标题、关键要点、来源
+3. 分类：可以分为「大模型/技术」、「产业/融资」、「政策/事件」等类别
+4. 语言简洁，适合社交媒体推送
+5. 如果新闻条数少于3条，如实列出即可，不要编造内容
+6. 格式使用 Markdown
+
+--- 新闻原文 ---
+{news_text}
+
+--- 请输出总结 ---
+"""
+    
+    def format_output(self, summary: str) -> str:
+        """最终格式化输出"""
+        from datetime import datetime
+        today = datetime.now().strftime("%Y年%m月%d日")
+        header = f"🤖 **每日AI早报** ({today})\n\n"
+        footer = "\n---\n由GitHub Actions + AI自动生成"
+        return header + summary + footer
+    
+    def save_to_file(self, summary: str) -> str:
+        """保存到历史文件"""
+        if not config.SAVE_HISTORY:
+            return ""
+        
+        os.makedirs(config.HISTORY_DIR, exist_ok=True)
+        today = datetime.now().strftime("%Y-%m-%d")
+        filename = f"{config.HISTORY_DIR}/{today}.md"
+        
+        with open(filename, 'w', encoding='utf-8') as f:
+            f.write(summary)
+        
+        print(f"💾 保存到: {filename}")
+        return filename
+    
+    def push_to_telegram(self, text: str) -> bool:
+        """推送到Telegram"""
+        if not (config.TELEGRAM_BOT_TOKEN and config.TELEGRAM_CHAT_ID):
+            print("⚠️ 未配置Telegram推送")
+            return False
+        
+        import requests
+        url = f"https://api.telegram.org/bot{config.TELEGRAM_BOT_TOKEN}/sendMessage"
+        data = {
+            'chat_id': config.TELEGRAM_CHAT_ID,
+            'text': text,
+            'parse_mode': 'Markdown'
+        }
+        response = requests.post(url, json=data)
+        return response.ok
+    
+    def push_to_feishu(self, text: str) -> bool:
+        """推送到飞书"""
+        if not config.FEISHU_WEBHOOK_URL:
+            print("⚠️ 未配置飞书webhook")
+            return False
+        
+        import requests
+        data = {
+            "msg_type": "text",
+            "content": {
+                "text": text
+            }
+        }
+        response = requests.post(config.FEISHU_WEBHOOK_URL, json=data)
+        return response.ok
+    
+    def run(self) -> str:
+        """运行完整流程"""
+        # 1. 获取新闻
+        news = self.fetch_daily_news()
+        
+        if not news:
+            output = "🤖 **每日AI早报**\n\n今天没有找到AI领域新发布的重要新闻。"
+            print(output)
+            return output
+        
+        # 2. 格式化
+        formatted = self.format_for_ai(news)
+        
+        # 3. AI总结
+        summary = self.get_ai_summary(formatted)
+        
+        # 如果配置了API，这里实际会得到AI总结
+        # 否则直接用原格式
+        if config.OPENAI_API_KEY:
+            # TODO: 调用OpenAI API
+            # summary = call_openai(summary)
+            pass
+        
+        # 4. 最终格式化
+        final_output = self.format_output(summary)
+        
+        # 5. 保存历史
+        if config.SAVE_HISTORY:
+            self.save_to_file(final_output)
+        
+        # 6. 推送
+        if config.PUSH_METHOD == 'telegram':
+            self.push_to_telegram(final_output)
+        elif config.PUSH_METHOD == 'feishu':
+            self.push_to_feishu(final_output)
+        elif config.PUSH_METHOD == 'github_issue':
+            # GitHub Issue 推送需要额外配置
+            print("GitHub Issue 推送需要额外配置GitHub Token")
+        
+        print("\n=== 生成完成 ===")
+        print(final_output)
+        
+        return final_output
+
+if __name__ == "__main__":
+    generator = DailyAINews()
+    result = generator.run()
+    sys.exit(0)
