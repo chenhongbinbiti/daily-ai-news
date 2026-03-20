@@ -1,57 +1,93 @@
 # 🤖 每日AI早报
 
-自动聚合AI领域新闻，每天定时生成简报推送到社交媒体。**纯 GitHub Actions 托管版本**，完全免费运行在GitHub。
+自动聚合AI领域新闻，每天定时生成简报推送到社交媒体。**纯 GitHub Actions 托管版本**，支持多种国产大模型。
 
 ## ✨ 功能特性
 
 - 🔄 **自动聚合** - 从多个AI资讯源RSS获取过去24小时新闻
-- 🧠 **AI总结** - 使用OpenAI整理成清晰简报（需要你配置API Key）
-- ⏰ **定时运行** - GitHub Actions 每天早上8点自动执行
+- 🧠 **支持多模型** - 火山引擎/DeepSeek/智谱GLM/OpenAI 可任选其一配置
+- ⏰ **定时运行** - GitHub Actions 每天早上8点自动执行（免费额度够用）
 - 📤 **多渠道推送** - 支持 Telegram / 飞书 / GitHub Issue
 - 💾 **保存历史** - 历史简报保存到仓库
 
-## 🚀 部署使用
+## 🚀 部署
 
-### 1. Fork 这个仓库
+### 1. Fork / 克隆这个仓库
 
 ```bash
-# 或者克隆到本地
 git clone https://github.com/你的用户名/daily-ai-news.git
 cd daily-ai-news
 ```
 
-### 2. 配置 Secrets
+### 2. 配置 Secrets 和 Variables
 
-在你的 GitHub 仓库 → Settings → Secrets and variables → Actions → New repository secret:
+在你的 GitHub 仓库 → Settings → **Secrets and variables** → Actions:
+
+**Secrets (加密密钥):**
 
 | Secret | 说明 | 是否必填 |
 |--------|------|----------|
-| `OPENAI_API_KEY` | OpenAI API 密钥 | 是（用于AI总结） |
+| `AI_API_KEY` | 你的AI模型API密钥 | ✅ 必填 |
 | `TELEGRAM_BOT_TOKEN` | Telegram Bot Token | 推送Telegram需要 |
 | `TELEGRAM_CHAT_ID` | Telegram Chat ID | 推送Telegram需要 |
 | `FEISHU_WEBHOOK_URL` | 飞书机器人Webhook | 推送飞书需要 |
 
-### 3. 修改配置（可选）
+**Variables (公开变量):**
 
-编辑 `config.py` 自定义：
+| Variable | 示例 | 说明 |
+|----------|------|------|
+| `AI_MODEL` | `doubao-4k-chat` | 模型名称 |
+| `AI_BASE_URL` | `https://aquasearch.volcengineapi.com/` | API Base URL |
+| `PUSH_METHOD` | `telegram` | 推送方式: `github_issue` / `telegram` / `feishu` / `none` |
+
+### 3. 选择你的模型配置
+
+#### 🔹 **火山引擎 (字节跳动)**
+```
+AI_API_KEY: 你的密钥 (Secrets)
+AI_MODEL: doubao-4k-chat (Variables)
+AI_BASE_URL: https://aquasearch.volcengineapi.com/ (Variables)
+```
+
+#### 🔹 **DeepSeek**
+```
+AI_API_KEY: 你的密钥 (Secrets)
+AI_MODEL: deepseek-chat (Variables)
+AI_BASE_URL: https://api.deepseek.com/v1 (Variables)
+```
+
+#### 🔹 **智谱 GLM**
+```
+AI_API_KEY: 你的密钥 (Secrets)
+AI_MODEL: glm-4 (Variables)
+AI_BASE_URL: https://open.bigmodel.cn/api/paas/v4 (Variables)
+```
+
+#### 🔹 **OpenAI**
+```
+AI_API_KEY: 你的密钥 (Secrets)
+AI_MODEL: gpt-3.5-turbo (Variables)
+AI_BASE_URL: https://api.openai.com/v1 (Variables)
+```
+
+### 4. 修改RSS新闻源（可选）
+
+编辑 `config.py` 中的 `AI_NEWS_RSS` 添加你喜欢的源：
 
 ```python
-# 修改推送方式
-PUSH_METHOD = "telegram"  # github_issue / telegram / feishu / none
-
-# 添加/修改RSS源
 AI_NEWS_RSS = [
     "https://ai.googleblog.com/atom.xml",
     "https://openai.com/blog/rss.xml",
+    "https://www.kdnuggets.com/feed",
     # ... 添加你自己的源
 ]
 ```
 
-### 4. 启用 Actions
+### 5. 启用 Actions
 
 在你的仓库 → Actions → 点击 `I understand my workflows, go ahead and enable them`
 
-### 5. 手动触发测试
+### 6. 手动触发测试
 
 Actions → `Daily AI News` → `Run workflow` → 手动运行测试
 
@@ -72,6 +108,11 @@ on:
 # 安装依赖
 pip install -r requirements.txt
 
+# 配置环境变量
+export AI_API_KEY=your-key
+export AI_MODEL=doubao-4k-chat
+export AI_BASE_URL=https://aquasearch.volcengineapi.com/
+
 # 运行
 python main.py
 ```
@@ -88,9 +129,8 @@ python main.py
 
 ## 💰 费用说明
 
-- GitHub Actions 免费额度完全够用（每月2000分钟）
-- OpenAI API 按调用量付费，每天一次调用费用大概几分钱
-- 总体几乎零成本
+- GitHub Actions 免费额度完全够用（每月2000分钟，每天一次只用1分钟左右）
+- AI API 费用由你使用的模型厂商收取，每天一次调用成本很低
 
 ## 📄 许可
 

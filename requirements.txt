@@ -1,4 +1,5 @@
-# 每日AI早报依赖
+# 每日AI早报依赖 - GitHub Actions 版本
+# 支持多种国产模型：火山引擎/DeepSeek/智谱GLM/OpenAI
 
 requests>=2.31.0
 feedparser>=6.0.10

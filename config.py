@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""配置文件 - GitHub Actions 版本"""
+"""配置文件 - GitHub Actions 版本，支持多模型可配置"""
 
 import os
 from typing import Optional
@@ -12,11 +12,35 @@ TIMEZONE = "Asia/Shanghai"
 SEARCH_QUERY = os.getenv("SEARCH_QUERY", "artificial intelligence AI news today latest updates")
 MAX_RESULTS = int(os.getenv("MAX_RESULTS", "15"))
 
-# AI 总结配置
-# 在ArkClaw环境中使用内置免费模型，不需要付费API
-# 如果配置了OPENAI_API_KEY则优先使用OpenAI
-OPENAI_API_KEY: Optional[str] = os.getenv("OPENAI_API_KEY")
-OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
+# AI 总结配置 - 支持多种国产模型
+# 所有模型都通过环境变量配置，不用改代码
+# 通用配置
+AI_API_KEY: Optional[str] = os.getenv("AI_API_KEY")  # 统一API密钥变量
+AI_MODEL = os.getenv("AI_MODEL", "gpt-3.5-turbo")  # 模型名称
+AI_BASE_URL: Optional[str] = os.getenv("AI_BASE_URL")  # API base URL
+
+# 各厂商配置说明：
+#
+# 1. 火山引擎 (字节跳动) - 兼容OpenAI格式
+# AI_API_KEY=your-volcengine-key
+# AI_BASE_URL=https://aquasearch.volcengineapi.com.cn/
+# AI_MODEL=doubao-4k-chat
+#
+# 2. DeepSeek
+# AI_API_KEY=your-deepseek-key
+# AI_BASE_URL=https://api.deepseek.com/v1
+# AI_MODEL=deepseek-chat
+#
+# 3. 智谱 GLM
+# AI_API_KEY=your-zhipu-key
+# AI_BASE_URL=https://open.bigmodel.cn/api/paas/v4
+# AI_MODEL=glm-4
+#
+# 4. OpenAI (原始)
+# AI_API_KEY=your-openai-key
+# AI_BASE_URL=https://api.openai.com/v1
+# AI_MODEL=gpt-3.5-turbo
+
 SUMMARY_MIN_LENGTH = int(os.getenv("SUMMARY_MIN_LENGTH", "300"))
 SUMMARY_MAX_LENGTH = int(os.getenv("SUMMARY_MAX_LENGTH", "800"))
 

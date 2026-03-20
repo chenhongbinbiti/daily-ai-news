@@ -31,20 +31,29 @@ class DailyAINews:
     
     def get_ai_summary(self, news_text: str) -> str:
         """使用AI生成总结
-        纯GitHub Actions版本，需要配置OPENAI_API_KEY
+        纯GitHub Actions版本，支持多种国产模型：
+        火山引擎/DeepSeek/智谱GLM/OpenAI，都通过统一配置
+        所有模型都兼容OpenAI API格式
         """
         prompt = self._build_prompt(news_text)
         
-        if not config.OPENAI_API_KEY:
-            print("⚠️ 未配置OPENAI_API_KEY，返回原始格式")
+        if not config.AI_API_KEY:
+            print("⚠️ 未配置AI_API_KEY，返回原始格式")
             return prompt
         
-        # 调用OpenAI API
+        # 调用AI API - 兼容OpenAI格式，支持所有国产模型
         try:
-            import openai
-            client = openai.OpenAI(api_key=config.OPENAI_API_KEY)
+            from openai import OpenAI
+            
+            # 通用配置，支持所有兼容OpenAI格式的API
+            client_kwargs = {"api_key": config.AI_API_KEY}
+            if config.AI_BASE_URL:
+                client_kwargs["base_url"] = config.AI_BASE_URL
+            
+            client = OpenAI(**client_kwargs)
+            
             response = client.chat.completions.create(
-                model=config.OPENAI_MODEL,
+                model=config.AI_MODEL,
                 messages=[
                     {"role": "system", "content": "你是一个新闻编辑助手，请整理AI新闻成清晰简洁的每日早报。"},
                     {"role": "user", "content": prompt}
@@ -55,7 +64,7 @@ class DailyAINews:
             summary = response.choices[0].message.content.strip()
             return summary
         except Exception as e:
-            print(f"❌ OpenAI API调用失败: {e}")
+            print(f"❌ AI API调用失败: {e}")
             return prompt
     
     def _build_prompt(self, news_text: str) -> str:
