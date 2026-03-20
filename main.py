@@ -146,21 +146,19 @@ class DailyAINews:
         news = self.fetch_daily_news()
         
         if not news:
-            output = "🤖 **每日AI早报**\n\n今天没有找到AI领域新发布的重要新闻。"
-            print(output)
-            return output
-        
-        # 2. 格式化
-        formatted = self.format_for_ai(news)
-        
-        # 3. AI总结
-        summary = self.get_ai_summary(formatted)
-        
-        # 如果配置了API，这里实际会得到AI总结
-        # 否则直接用原格式
-        if config.AI_API_KEY:
-            # 已经在 get_ai_summary 中处理了
-            pass
+            summary = "今天没有找到AI领域新发布的重要新闻。"
+        else:
+            # 2. 格式化
+            formatted = self.format_for_ai(news)
+            
+            # 3. AI总结
+            summary = self.get_ai_summary(formatted)
+            
+            # 如果配置了API，这里实际会得到AI总结
+            # 否则直接用原格式
+            if config.AI_API_KEY:
+                # 已经在 get_ai_summary 中处理了
+                pass
         
         # 4. 最终格式化
         final_output = self.format_output(summary)
