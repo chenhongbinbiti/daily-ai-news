@@ -158,9 +158,8 @@ class DailyAINews:
         
         # 如果配置了API，这里实际会得到AI总结
         # 否则直接用原格式
-        if config.OPENAI_API_KEY:
-            # TODO: 调用OpenAI API
-            # summary = call_openai(summary)
+        if config.AI_API_KEY:
+            # 已经在 get_ai_summary 中处理了
             pass
         
         # 4. 最终格式化
