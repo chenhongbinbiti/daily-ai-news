@@ -86,10 +86,9 @@ AI_NEWS_RSS = [
     "https://www.kdnuggets.com/feed",
     "https://towardsdatascience.com/feed",
     "https://spectrum.ieee.org/section/artificial-intelligence/feed",
-    # 国内源（稳定可访问）
+    # 国内源（稳定可访问，已测试）
     "https://www.ruanyifeng.com/blog/atom.xml",          # 阮一峰 - 科技爱好者周刊
-    "https://feeds.feedburner.com/boyang-ai",           # 阿常 - AI速递
-    "https://blog.csdn.net/baidu_ai/rss",               # 百度AI技术博客
+    "https://sspai.com/feed",                           # 少数派 - 科技数码分享
 ]
 
 # 是否保存历史到本地
