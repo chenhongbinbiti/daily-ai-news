@@ -30,6 +30,8 @@ class RSSNewsReader:
     def fetch_all(self) -> List[Dict]:
         """从所有RSS源获取最近24小时的新闻"""
         all_news = []
+        self.stats = []  # 保存每个源的统计信息
+        
         total_sources = len(self.rss_urls)
         success_count = 0
         
@@ -40,11 +42,53 @@ class RSSNewsReader:
         for url in self.rss_urls:
             try:
                 news = self._fetch_from_url(url)
+                # 获取源名称 - 顺序很重要，从具体到通用
+                if "googleblog" in url:
+                    name = "Google AI Blog"
+                elif "openai.com" in url:
+                    name = "OpenAI Blog"
+                elif "towardsdatascience" in url:
+                    name = "Towards Data Science"
+                elif "spectrum.ieee" in url:
+                    name = "IEEE Spectrum"
+                elif "kdnuggets" in url.lower():
+                    name = "KDnuggets"
+                elif "ruanyifeng" in url:
+                    name = "阮一峰-科技爱好者周刊"
+                elif "qbitai" in url:
+                    name = "量子位-AI资讯"
+                elif "jiqizhixin" in url:
+                    name = "机器之心"
+                elif "sspai" in url:
+                    name = "少数派"
+                elif "36kr" in url:
+                    name = "36氪-AI专栏"
+                elif "zhihu" in url:
+                    name = "知乎"
+                else:
+                    name = url.split('/')[2]
+                
+                self.stats.append({
+                    "url": url,
+                    "name": name,
+                    "success": len(news) > 0,
+                    "recent_count": len(news),
+                    "error": None
+                })
+                
                 if news:
                     success_count += 1
                     all_news.extend(news)
             except Exception as e:
-                print(f"⚠️  获取失败跳过: {url[:60]}... 错误: {str(e)[:100]}")
+                error_msg = str(e)[:100]
+                self.stats.append({
+                    "url": url,
+                    "name": name if 'name' in locals() else url.split('/')[2],
+                    "success": False,
+                    "recent_count": 0,
+                    "error": error_msg
+                })
+                print(f"⚠️  获取失败跳过: {url[:60]}... 错误: {error_msg}")
                 continue
         
         print(f"✅ 完成: {success_count}/{total_sources} 个RSS源成功获取，共找到 {len(all_news)} 条新闻")

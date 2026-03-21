@@ -92,12 +92,22 @@ class DailyAINews:
 --- 请输出总结 ---
 """
     
-    def format_output(self, summary: str) -> str:
+    def format_output(self, summary: str, stats=None) -> str:
         """最终格式化输出"""
         from datetime import datetime
         today = datetime.now().strftime("%Y年%m月%d日")
         header = f"🤖 **每日AI早报** ({today})\n\n"
-        footer = "\n---\n由GitHub Actions + AI自动生成"
+        
+        # 如果有统计信息，添加到末尾
+        if stats:
+            footer = "\n\n---\n## 📊 RSS源统计\n\n| 名称 | 状态 | 最近24h文章数 |\n|------|------|-------------|\n"
+            for s in stats:
+                status = "✅ 成功" if s['success'] else "❌ 失败"
+                footer += f"| {s['name']} | {status} | {s['recent_count']} |\n"
+            footer += "\n---\n由OpenClaw + GitHub Actions 自动生成"
+        else:
+            footer = "\n---\n由OpenClaw + GitHub Actions 自动生成"
+        
         return header + summary + footer
     
     def save_to_file(self, summary: str) -> str:
@@ -248,7 +258,7 @@ class DailyAINews:
                 pass
         
         # 4. 最终格式化
-        final_output = self.format_output(summary)
+        final_output = self.format_output(summary, self.rss_reader.stats)
         
         # 5. 保存历史
         if config.SAVE_HISTORY:
