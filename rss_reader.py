@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from typing import List, Dict
 import time
 import requests
+from urllib.parse import quote
 
 import config
 
@@ -18,25 +19,45 @@ class RSSNewsReader:
         now = time.time()
         return (now - published_time) < (hours * 3600)
     
+    def _get_rss_url(self, original_url: str) -> str:
+        """获取最终的RSS URL，支持RSSHub反代"""
+        if config.RSSHUB_BASE_URL:
+            # 使用RSSHub反代: https://rsshub.app/url?url=original_url
+            rsshub_base = config.RSSHUB_BASE_URL.rstrip('/')
+            return f"{rsshub_base}/{quote(original_url)}"
+        return original_url
+    
     def fetch_all(self) -> List[Dict]:
         """从所有RSS源获取最近24小时的新闻"""
         all_news = []
+        total_sources = len(self.rss_urls)
+        success_count = 0
+        
+        print(f"🔍 开始从 {total_sources} 个RSS源获取新闻...")
+        if config.RSSHUB_BASE_URL:
+            print(f"🌐 使用RSSHub反代: {config.RSSHUB_BASE_URL[:50]}...")
         
         for url in self.rss_urls:
             try:
                 news = self._fetch_from_url(url)
-                all_news.extend(news)
+                if news:
+                    success_count += 1
+                    all_news.extend(news)
             except Exception as e:
-                print(f"Failed to fetch {url}: {e}")
+                print(f"⚠️  获取失败跳过: {url[:60]}... 错误: {str(e)[:100]}")
                 continue
         
+        print(f"✅ 完成: {success_count}/{total_sources} 个RSS源成功获取，共找到 {len(all_news)} 条新闻")
+        
         # 按时间倒序排序
-        all_news.sort(key=lambda x: x.get('published_parsed', 0), reverse=True)
+        all_news.sort(key=lambda x: x.get('published_ts', 0), reverse=True)
         return all_news
     
-    def _fetch_from_url(self, url: str) -> List[Dict]:
+    def _fetch_from_url(self, original_url: str) -> List[Dict]:
         """从单个URL获取最近24小时新闻"""
-        response = requests.get(url, timeout=10)
+        url = self._get_rss_url(original_url)
+        response = requests.get(url, timeout=15)
+        response.raise_for_status()
         feed = feedparser.parse(response.content)
         
         recent_news = []
@@ -44,15 +65,22 @@ class RSSNewsReader:
             # 获取发布时间
             if hasattr(entry, 'published_parsed'):
                 published_ts = time.mktime(entry.published_parsed)
-                if self.is_recent(published_ts):
-                    recent_news.append({
-                        'title': entry.title,
-                        'link': entry.link,
-                        'summary': entry.get('summary', entry.get('description', '')),
-                        'published': entry.get('published', ''),
-                        'published_ts': published_ts,
-                        'source': feed.feed.title if hasattr(feed, 'feed') and hasattr(feed.feed, 'title') else url
-                    })
+            elif hasattr(entry, 'updated_parsed'):
+                published_ts = time.mktime(entry.updated_parsed)
+            else:
+                # 如果没有时间，默认为最近新闻
+                published_ts = time.time()
+            
+            if self.is_recent(published_ts):
+                source_name = feed.feed.title if (hasattr(feed, 'feed') and hasattr(feed.feed, 'title')) else original_url
+                recent_news.append({
+                    'title': entry.title,
+                    'link': entry.link,
+                    'summary': entry.get('summary', entry.get('description', '')),
+                    'published': entry.get('published', entry.get('updated', '')),
+                    'published_ts': published_ts,
+                    'source': source_name
+                })
         
         return recent_news
     

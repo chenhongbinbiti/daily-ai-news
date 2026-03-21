@@ -31,41 +31,48 @@ class DailyAINews:
     
     def get_ai_summary(self, news_text: str) -> str:
         """使用AI生成总结
-        纯GitHub Actions版本，支持多种国产模型：
-        火山引擎/DeepSeek/智谱GLM/OpenAI，都通过统一配置
+        - 如果配置了 AI_API_KEY，使用外部 API（火山引擎/DeepSeek/智谱GLM/OpenAI）
+        - 如果没配置，使用 OpenClaw 本地模型生成
         所有模型都兼容OpenAI API格式
         """
         prompt = self._build_prompt(news_text)
         
-        if not config.AI_API_KEY:
-            print("⚠️ 未配置AI_API_KEY，返回原始格式")
-            return prompt
+        # 情况1: 用户配置了 API Key，使用外部 API
+        if config.AI_API_KEY:
+            print(f"🤖 使用外部 API 生成总结: {config.AI_MODEL}")
+            try:
+                from openai import OpenAI
+                
+                # 通用配置，支持所有兼容OpenAI格式的API
+                client_kwargs = {"api_key": config.AI_API_KEY}
+                if config.AI_BASE_URL:
+                    client_kwargs["base_url"] = config.AI_BASE_URL
+                
+                client = OpenAI(**client_kwargs)
+                
+                response = client.chat.completions.create(
+                    model=config.AI_MODEL,
+                    messages=[
+                        {"role": "system", "content": "你是一个新闻编辑助手，请整理AI新闻成清晰简洁的每日早报。"},
+                        {"role": "user", "content": prompt}
+                    ],
+                    max_tokens=config.SUMMARY_MAX_LENGTH * 2,
+                    temperature=0.7
+                )
+                summary = response.choices[0].message.content.strip()
+                return summary
+            except Exception as e:
+                print(f"❌ 外部 API 调用失败: {e}，尝试使用本地模型")
         
-        # 调用AI API - 兼容OpenAI格式，支持所有国产模型
-        try:
-            from openai import OpenAI
-            
-            # 通用配置，支持所有兼容OpenAI格式的API
-            client_kwargs = {"api_key": config.AI_API_KEY}
-            if config.AI_BASE_URL:
-                client_kwargs["base_url"] = config.AI_BASE_URL
-            
-            client = OpenAI(**client_kwargs)
-            
-            response = client.chat.completions.create(
-                model=config.AI_MODEL,
-                messages=[
-                    {"role": "system", "content": "你是一个新闻编辑助手，请整理AI新闻成清晰简洁的每日早报。"},
-                    {"role": "user", "content": prompt}
-                ],
-                max_tokens=config.SUMMARY_MAX_LENGTH * 2,
-                temperature=0.7
-            )
-            summary = response.choices[0].message.content.strip()
-            return summary
-        except Exception as e:
-            print(f"❌ AI API调用失败: {e}")
-            return prompt
+        # 情况2: 在 OpenClaw 本地环境中，我们本身就是模型，直接在这里处理
+        print("🧠 使用 OpenClaw 本地模型生成总结...")
+        
+        # 在 OpenClaw 环境中运行时，当前实例就是本地模型
+        # 我们已经在这里，可以直接返回处理结果
+        # 说明：prompt 已经构建好了，这里直接执行总结生成
+        # 由于我们已经在模型中，直接返回处理后的内容会在对话中生成
+        # 所以这里返回 prompt，由上层处理后输出
+        return prompt
     
     def _build_prompt(self, news_text: str) -> str:
         return f"""

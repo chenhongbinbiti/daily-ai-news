@@ -72,13 +72,24 @@ SMTP_PASSWORD: Optional[str] = os.getenv("SMTP_PASSWORD")
 SMTP_FROM: Optional[str] = os.getenv("SMTP_FROM")
 SMTP_TO: Optional[str] = os.getenv("SMTP_TO")  # 多个收件人用逗号分隔
 
-# RSS 新闻源 - AI领域常用资讯源
+# RSSHub 反代配置
+# 如果配置了 RSSHUB_BASE_URL，所有 RSS 源会通过 RSSHub 反代获取
+# 示例: RSSHUB_BASE_URL=https://rsshub.app/
+RSSHUB_BASE_URL: Optional[str] = os.getenv("RSSHUB_BASE_URL")
+
+# RSS 新闻源 - AI领域常用资讯源（国内外混合）
+# 国外源可能需要 RSSHub 反代才能正常访问
 AI_NEWS_RSS = [
+    # 国外源
     "https://ai.googleblog.com/atom.xml",
     "https://openai.com/blog/rss.xml",
     "https://www.kdnuggets.com/feed",
     "https://towardsdatascience.com/feed",
     "https://spectrum.ieee.org/section/artificial-intelligence/feed",
+    # 国内源（稳定可访问）
+    "https://www.ruanyifeng.com/blog/atom.xml",          # 阮一峰 - 科技爱好者周刊
+    "https://feeds.feedburner.com/boyang-ai",           # 阿常 - AI速递
+    "https://blog.csdn.net/baidu_ai/rss",               # 百度AI技术博客
 ]
 
 # 是否保存历史到本地
