@@ -57,6 +57,21 @@ FEISHU_WEBHOOK_URL: Optional[str] = os.getenv("FEISHU_WEBHOOK_URL")
 # GitHub Issue 推送 (默认推送到当前仓库的 Issue)
 GITHUB_REPO = os.getenv("GITHUB_REPO", "")  # owner/repo
 
+# 邮件推送 (SMTP)
+# 示例配置:
+# SMTP_SERVER=smtp.gmail.com
+# SMTP_PORT=587
+# SMTP_USERNAME=your-email@gmail.com
+# SMTP_PASSWORD=your-app-password
+# SMTP_FROM=your-email@gmail.com
+# SMTP_TO=recipient@example.com
+SMTP_SERVER: Optional[str] = os.getenv("SMTP_SERVER")
+SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
+SMTP_USERNAME: Optional[str] = os.getenv("SMTP_USERNAME")
+SMTP_PASSWORD: Optional[str] = os.getenv("SMTP_PASSWORD")
+SMTP_FROM: Optional[str] = os.getenv("SMTP_FROM")
+SMTP_TO: Optional[str] = os.getenv("SMTP_TO")  # 多个收件人用逗号分隔
+
 # RSS 新闻源 - AI领域常用资讯源
 AI_NEWS_RSS = [
     "https://ai.googleblog.com/atom.xml",

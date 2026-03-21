@@ -177,6 +177,49 @@ class DailyAINews:
             print(f"❌ GitHub Issue 创建失败！状态码: {response.status_code}, 响应: {response.text}")
             return False
     
+    def push_to_email(self, text: str) -> bool:
+        """使用SMTP推送邮件通知"""
+        if not (config.SMTP_SERVER and config.SMTP_USERNAME and config.SMTP_PASSWORD and config.SMTP_FROM and config.SMTP_TO):
+            print("⚠️ 未配置完整的邮件推送信息，请检查SMTP配置")
+            return False
+        
+        import smtplib
+        from email.mime.text import MIMEText
+        from email.header import Header
+        
+        today = datetime.now().strftime("%Y年%m月%d日")
+        subject = f"🤖 每日AI早报 - {today}"
+        
+        # 创建邮件
+        msg = MIMEText(text, 'plain', 'utf-8')
+        msg['From'] = config.SMTP_FROM
+        msg['To'] = config.SMTP_TO
+        msg['Subject'] = Header(subject, 'utf-8')
+        
+        try:
+            print(f"🚀 正在发送邮件通知... 收件人: {config.SMTP_TO}")
+            # 连接SMTP服务器
+            if config.SMTP_PORT == 465:
+                # SSL连接
+                server = smtplib.SMTP_SSL(config.SMTP_SERVER, config.SMTP_PORT)
+            else:
+                # STARTTLS
+                server = smtplib.SMTP(config.SMTP_SERVER, config.SMTP_PORT)
+                server.starttls()
+            
+            # 登录
+            server.login(config.SMTP_USERNAME, config.SMTP_PASSWORD)
+            
+            # 发送
+            server.sendmail(config.SMTP_FROM, config.SMTP_TO.split(','), msg.as_string())
+            server.quit()
+            
+            print("✅ 邮件发送成功！")
+            return True
+        except Exception as e:
+            print(f"❌ 邮件发送失败！错误: {str(e)}")
+            return False
+    
     def run(self) -> str:
         """运行完整流程"""
         # 1. 获取新闻
@@ -212,6 +255,8 @@ class DailyAINews:
             self.push_to_feishu(final_output)
         elif config.PUSH_METHOD == 'github_issue':
             self.push_to_github_issue(final_output)
+        elif config.PUSH_METHOD == 'email':
+            self.push_to_email(final_output)
         else:
             print(f"⚠️ 未知的推送方式: {config.PUSH_METHOD}，未执行推送")
         
