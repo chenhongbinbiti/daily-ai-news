@@ -145,6 +145,38 @@ class DailyAINews:
             print(f"❌ 飞书推送失败！状态码: {response.status_code}, 响应: {response.text}")
         return response.ok
     
+    def push_to_github_issue(self, text: str) -> bool:
+        """推送到GitHub Issue"""
+        if not config.GITHUB_REPO or not os.getenv("GITHUB_TOKEN"):
+            print("⚠️ 未配置GitHub Issue推送，需要GITHUB_REPO和GITHUB_TOKEN")
+            return False
+        
+        import requests
+        today = datetime.now().strftime("%Y年%m月%d日")
+        title = f"🤖 每日AI早报 - {today}"
+        
+        headers = {
+            "Authorization": f"token {os.getenv('GITHUB_TOKEN')}",
+            "Accept": "application/vnd.github.v3+json"
+        }
+        data = {
+            "title": title,
+            "body": text,
+            "labels": ["daily-news", "ai"]
+        }
+        
+        url = f"https://api.github.com/repos/{config.GITHUB_REPO}/issues"
+        print(f"🚀 正在创建GitHub Issue... 仓库: {config.GITHUB_REPO}")
+        response = requests.post(url, json=data, headers=headers)
+        
+        if response.ok:
+            issue_url = response.json()["html_url"]
+            print(f"✅ GitHub Issue 创建成功！{issue_url}")
+            return True
+        else:
+            print(f"❌ GitHub Issue 创建失败！状态码: {response.status_code}, 响应: {response.text}")
+            return False
+    
     def run(self) -> str:
         """运行完整流程"""
         # 1. 获取新闻
@@ -179,8 +211,7 @@ class DailyAINews:
         elif config.PUSH_METHOD == 'feishu':
             self.push_to_feishu(final_output)
         elif config.PUSH_METHOD == 'github_issue':
-            # GitHub Issue 推送需要额外配置
-            print("GitHub Issue 推送需要额外配置GitHub Token")
+            self.push_to_github_issue(final_output)
         else:
             print(f"⚠️ 未知的推送方式: {config.PUSH_METHOD}，未执行推送")
         
